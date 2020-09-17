@@ -34,6 +34,7 @@
 #include "sharedialog.h"
 #include "accountmanager.h"
 #include "creds/abstractcredentials.h"
+#include "virtualdriveinterface.h"
 
 #if defined(BUILD_UPDATER)
 #include "updater/ocupdater.h"
@@ -42,10 +43,7 @@
 #include "owncloudsetupwizard.h"
 #include "version.h"
 
-#if defined(Q_OS_WIN)
-#include <windows.h>
-#include "vfs_windows.h"
-#endif
+#include "config.h"
 
 #if defined(WITH_CRASHREPORTER)
 #include <libcrashreporter-handler/Handler.h>
@@ -292,18 +290,15 @@ Application::~Application()
     disconnect(AccountManager::instance(), &AccountManager::accountRemoved,
         this, &Application::slotAccountStateRemoved);
     AccountManager::instance()->shutdown();
-
-#if defined(Q_OS_WIN)
-    VfsWindows::instance()->unmount();
-#endif
-
-#if defined(Q_OS_MAC)
-    VfsMacController::instance()->unmount();
-#endif
 }
 
 void Application::slotAccountStateRemoved(AccountState *accountState)
 {
+    const auto drive = accountState->drive();
+    if (drive) {
+        drive->unmount();
+    }
+
     if (_gui) {
         disconnect(accountState, &AccountState::stateChanged,
             _gui.data(), &ownCloudGui::slotAccountStateChanged);
@@ -337,8 +332,12 @@ void Application::slotAccountStateAdded(AccountState *accountState)
     connect(accountState->account().data(), &Account::serverVersionChanged,
         _folderManager.data(), &FolderMan::slotServerVersionChanged);
 
-    slotMountVirtualDrive(accountState);
     _gui->slotTrayMessageIfServerUnsupported(accountState->account().data());
+
+    const auto drive = accountState->drive();
+    if (drive) {
+        drive->mount();
+    }
 }
 
 void Application::slotCleanup()
