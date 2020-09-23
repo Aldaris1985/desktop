@@ -684,33 +684,6 @@ void Application::slotGuiIsShowingSettings()
     emit isShowingSettingsDialog();
 }
 
-void Application::slotMountVirtualDrive(AccountState *accountState) {
-    // Mount the virtual FileSystem.
-#if defined(Q_OS_MAC)
-    ConfigFile configFile;
-    if (configFile.enableVirtualFileSystem()) {
-        VfsMacController::instance()->initialize(accountState);
-        VfsMacController::instance()->mount();
-    }
-#endif
-
-#if defined(Q_OS_WIN)
-    ConfigFile configFile;
-    if (configFile.enableVirtualFileSystem()) {
-        VfsWindows::instance()->initialize(accountState);
-        VfsWindows::instance()->mount();
-    }
-#endif
-
-    //< For cron delete dir/files online. Execute each 60000 msec
-
-	//< Uncomment for test "Clean local folder" case.
- 	/*_cronDeleteOnlineFiles = new QTimer(this);
-	connect(_cronDeleteOnlineFiles, SIGNAL(timeout()), this, SLOT(slotDeleteOnlineFiles()));
-	_cronDeleteOnlineFiles->start(60000);
-	*/
-}
-
 bool Application::removeDirs(const QString & dirName)
 {
     bool result = true;
